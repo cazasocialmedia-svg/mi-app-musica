@@ -2,7 +2,7 @@ import streamlit as st
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
-# 1. Conexión
+# Conexión limpia usando tus Secrets
 auth_manager = SpotifyClientCredentials(
     client_id=st.secrets["SPOTIPY_CLIENT_ID"],
     client_secret=st.secrets["SPOTIPY_CLIENT_SECRET"]
@@ -21,17 +21,15 @@ if yt_link:
     
     with tab2:
         st.subheader("Recomendaciones por ADN Musical")
-        
         try:
-            # PASO A: Buscamos "Dua Lipa Love Again" en Spotify para tener la base
-            # (En el futuro esto puede ser automático, por ahora fijamos la base)
-            base_search = sp.search(q="Dua Lipa Love Again", limit=1, type='track')
+            # Forzamos una búsqueda fresca de la canción base
+            # Esto 'despierta' la conexión de Spotify ahora que ya estás en User Management
+            busqueda = sp.search(q="Dua Lipa Love Again", limit=1, type='track')
             
-            if base_search['tracks']['items']:
-                track = base_search['tracks']['items'][0]
-                track_id = track['id']
+            if busqueda['tracks']['items']:
+                track_id = busqueda['tracks']['items'][0]['id']
                 
-                # PASO B: Spotify analiza el ritmo y nos da algo similar
+                # Pedimos recomendaciones reales basadas en el ID
                 recs = sp.recommendations(seed_tracks=[track_id], limit=3)
                 
                 for r in recs['tracks']:
@@ -39,17 +37,14 @@ if yt_link:
                         st.markdown(f"🌟 **{r['name']}**")
                         st.caption(f"De: {r['artists'][0]['name']}")
                         
-                        # Link de YouTube corregido
+                        # Link de búsqueda corregido para YouTube
                         q = f"{r['name']} {r['artists'][0]['name']}".replace(" ", "+")
                         st.link_button("📺 Ver Video", f"https://www.youtube.com/results?search_query={q}")
             else:
-                st.warning("No pude encontrar la canción base en Spotify.")
-        except:
-            st.error("Spotify bloqueó la búsqueda. Revisa el User Management.")
+                st.warning("No pude encontrar la canción base para comparar.")
+        except Exception as e:
+            st.error("Error de sincronización. Dale al botón de 'Reboot' en Streamlit para activar tu nuevo permiso de usuario.")
 
-st.divider()
 with st.expander("📁 Mis Carpetas"):
-    c1, c2, c3 = st.columns(3)
-    c1.button("🎸 Rock")
-    c2.button("🍿 Pop")
-    c3.button("🌍 World")
+    st.button("🍿 Pop")
+

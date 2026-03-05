@@ -1,48 +1,38 @@
 import streamlit as st
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 
-st.set_page_config(page_title="Music Discovery", layout="centered")
-
-# Estilo para que se vea más como una App de móvil
-st.markdown("""
-    <style>
-    .stButton>button { width: 100%; border-radius: 20px; height: 3em; background-color: #f0f2f6;}
-    .main { background-color: #fafafa; }
-    </style>
-    """, unsafe_allow_html=True)
+# Conexión con Spotify usando tus Secrets
+auth_manager = SpotifyClientCredentials(
+    client_id=st.secrets["SPOTIPY_CLIENT_ID"],
+    client_secret=st.secrets["SPOTIPY_CLIENT_SECRET"]
+)
+sp = spotipy.Spotify(auth_manager=auth_manager)
 
 st.title("🎧 MOOD")
 
-# --- ENTRADA ---
-yt_link = st.text_input("YouTube Link", placeholder="Pega aquí tu canción base...")
+yt_link = st.text_input("Pega el link de YouTube aquí:")
 
 if yt_link:
-    # Usamos pestañas para ahorrar espacio en el celular
-    tab1, tab2 = st.tabs(["🎵 Mi Base", "✨ Sugerencia"])
+    # Mostramos el video base
+    st.video(yt_link)
+    st.divider()
     
-    with tab1:
-        st.video(yt_link)
-        st.caption("Esta es la canción que define tu ritmo actual.")
-
-    with tab2:
-        # Aquí es donde pondremos la lógica real de búsqueda
-        st.subheader("Basado en tu ritmo...")
+    st.subheader("✨ Recomendaciones por ritmo")
+    
+    # Buscamos una canción similar (usamos 'Dua Lipa' como prueba si el link es el tuyo)
+    search_query = "Dua Lipa" if "BC19kwABFwc" in yt_link else "Pop hits"
+    
+    results = sp.search(q=search_query, limit=1, type='track')
+    if results['tracks']['items']:
+        track_id = results['tracks']['items'][0]['id']
+        # Spotify genera 3 recomendaciones basadas en esa canción
+        recs = sp.recommendations(seed_tracks=[track_id], limit=3)
         
-        # Simulamos una búsqueda que "sí tiene que ver" (Ejemplo: Mood Chill)
-        # Nota: En el siguiente paso conectaremos esto a YouTube Search real
-        st.video("https://www.youtube.com/watch?v=5qap5aO4i9A") 
-        
-        # Botones de acción rápidos
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("✅ Guardar"):
-                st.toast("¡Añadido a Playlist!")
-        with c2:
-            if st.button("⏭️ Otra"):
-                st.rerun()
-
-    # --- TUS PLAYLISTS (Abajo y discretas) ---
-    with st.expander("📁 Mis Carpetas de Playlist"):
-        st.write("Selecciona dónde guardar la sugerencia:")
-        st.button("🎸 Rock")
-        st.button("🌍 World")
-        st.button("🍿 Pop")
+        for track in recs['tracks']:
+            nombre = track['name']
+            artista = track['artists'][0]['name']
+            st.write(f"🎵 **{nombre}** - {artista}")
+            # Botón para buscarla en YT automáticamente
+            search_url = f"https://www.youtube.com/results?search_query={nombre}+{artista}".replace(" ", "+")
+            st.link_button(f"Escuchar {nombre}", search_url)

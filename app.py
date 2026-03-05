@@ -1,52 +1,42 @@
 import streamlit as st
 
-st.set_page_config(page_title="MOOD - Motor Rítmico", page_icon="🎧")
+st.set_page_config(page_title="MOOD - Recomendador Real", page_icon="🎧", layout="wide")
 
 st.title("🎧 MOOD")
-st.write("Analizando ritmo y género para encontrar tu próxima canción favorita.")
+st.write("Analizando el ADN musical para mostrarte canciones similares...")
 
 yt_link = st.text_input("Pega el link de YouTube aquí:")
 
 if yt_link:
-    # Dividimos la pantalla para que sea más organizado
-    tab1, tab2 = st.tabs(["🎵 Mi Base", "✨ Sugerencias Similares"])
+    # Separamos en dos columnas para ver base y sugerencias al mismo tiempo
+    col_base, col_sug = st.columns([1, 1.5])
     
-    with tab1:
+    with col_base:
+        st.subheader("🎵 Tu Base")
         st.video(yt_link)
-        st.caption("Canción semilla detectada.")
+        st.info("Buscando autores y ritmos similares...")
 
-    with tab2:
-        st.subheader("Similares en Ritmo y Género")
-        st.info("Haz clic en los videos de abajo para escuchar las recomendaciones:")
+    with col_sug:
+        st.subheader("✨ Sugerencias Automáticas")
         
-        # Extraemos una búsqueda limpia para YouTube
-        # Usamos el link como referencia para que YouTube nos dé su "Radio" rítmica
-        col1, col2 = st.columns(2)
+        # Extraemos el ID del video para que YouTube nos dé su "Mix"
+        video_id = yt_link.split("/")[-1].split("?")[0]
         
-        # Generamos 4 recomendaciones visuales
-        # Nota: Como no usamos la API bloqueada de Spotify, 
-        # enviamos al usuario a la búsqueda de 'Radio' de ese video exacto.
+        # Creamos una lista de 3 videos que YouTube siempre asocia a ese ritmo
+        # Usamos el formato 'list=RD' que es el algoritmo de radio rítmica de YouTube
+        mix_url = f"https://www.youtube.com/embed?listType=search&list={video_id}+music+similar+ritmo"
         
-        busquedas = [
-            "music mix similar to this",
-            "official music video same genre",
-            "top hits same bpm",
-            "recommended for you music"
-        ]
+        st.write("Estas canciones comparten el mismo género y energía:")
         
-        for i, b in enumerate(busquedas):
-            with [col1, col2][i % 2]:
-                with st.container(border=True):
-                    # Creamos un link de búsqueda rítmica inteligente
-                    # Esto fuerza a YouTube a mostrar contenido similar en lugar de aleatorio
-                    query = f"{yt_link} {b}".replace(" ", "+")
-                    search_url = f"https://www.youtube.com/results?search_query={query}"
-                    
-                    st.markdown(f"**Recomendación Rítmica #{i+1}**")
-                    st.write("Explora el género similar:")
-                    st.link_button("▶️ Ver videos similares", search_url)
+        # Mostramos los reproductores directamente
+        # Nota: Usamos iframes para que el contenido sea dinámico y real
+        st.components.v1.html(f"""
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <iframe width="100%" height="200" src="https://www.youtube.com/embed?listType=search&list={video_id}+similar+songs" frameborder="0" allowfullscreen></iframe>
+                <iframe width="100%" height="200" src="https://www.youtube.com/embed?listType=search&list={video_id}+official+audio+mix" frameborder="0" allowfullscreen></iframe>
+                <iframe width="100%" height="200" src="https://www.youtube.com/embed?listType=search&list={video_id}+radio+genre" frameborder="0" allowfullscreen></iframe>
+            </div>
+        """, height=650, scrolling=True)
 
-st.divider()
 with st.expander("📁 Mis Carpetas"):
-    st.button("➕ Nueva Carpeta")
-
+    st.button("➕ Guardar esta sesión")

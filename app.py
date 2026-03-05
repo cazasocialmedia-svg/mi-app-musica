@@ -1,47 +1,58 @@
 import streamlit as st
-import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
 
-# Forzamos una nueva conexión limpia en cada ejecución
-@st.cache_resource
-def conectar_spotify():
-    return spotipy.Spotify(auth_manager=SpotifyClientCredentials(
-        client_id=st.secrets["SPOTIPY_CLIENT_ID"],
-        client_secret=st.secrets["SPOTIPY_CLIENT_SECRET"]
-    ))
+# 1. Configuración Visual
+st.set_page_config(page_title="MOOD - YouTube Edition", page_icon="🎧")
 
-sp = conectar_spotify()
+st.markdown("""
+    <style>
+    .stTabs [data-baseweb="tab-list"] { gap: 24px; }
+    .stTabs [data-baseweb="tab"] { height: 50px; white-space: pre-wrap; font-weight: bold; }
+    </style>
+    """, unsafe_allow_html=True)
 
 st.title("🎧 MOOD")
+st.write("Crea tu propia experiencia musical sin bloqueos.")
 
-yt_link = st.text_input("Pega el link de YouTube aquí:")
+# 2. Entrada de Usuario
+yt_link = st.text_input("Pega el link de YouTube aquí:", placeholder="https://youtu.be/...")
 
 if yt_link:
-    tab1, tab2 = st.tabs(["🎵 Mi Base", "✨ Sugerencias"])
+    tab1, tab2 = st.tabs(["🎵 Mi Base", "✨ Sugerencias Directas"])
     
     with tab1:
         st.video(yt_link)
-    
-    with tab2:
-        st.subheader("Recomendaciones por ADN Musical")
-        try:
-            # Buscamos una canción de Dua Lipa para arrancar el motor
-            busqueda = sp.search(q="Dua Lipa Love Again", limit=1, type='track')
-            
-            if busqueda['tracks']['items']:
-                track_id = busqueda['tracks']['items'][0]['id']
-                recs = sp.recommendations(seed_tracks=[track_id], limit=3)
-                
-                for r in recs['tracks']:
-                    with st.container(border=True):
-                        st.markdown(f"🌟 **{r['name']}**")
-                        st.caption(f"De: {r['artists'][0]['name']}")
-                        q = f"{r['name']} {r['artists'][0]['name']}".replace(" ", "+")
-                        st.link_button("📺 Ver Video", f"https://www.youtube.com/results?search_query={q}")
-            else:
-                st.warning("Conectado a Spotify, pero no encontré la canción base.")
-        except Exception as e:
-            st.error(f"Error de acceso. Spotify dice que no tienes permiso. Verifica que tu correo en el Dashboard esté como 'Accepted'.")
+        st.caption("Tu video base está listo.")
 
+    with tab2:
+        st.subheader("Explorar música similar")
+        st.write("Como Spotify está bloqueado, aquí tienes accesos directos para encontrar el mismo ritmo:")
+        
+        # Definimos una lista de géneros para que elijas según el video que pegues
+        generos = ["Pop / Dance", "Lo-Fi / Relax", "Rock / Indie", "Reggaeton / Urbano"]
+        seleccion = st.selectbox("¿Qué vibra buscas hoy?", generos)
+        
+        # Creamos 3 recomendaciones inteligentes basadas en el género
+        # Esto simula el ADN musical de forma manual y segura
+        
+        col1, col2, col3 = st.columns(3)
+        
+        # Diccionario de sugerencias rápidas
+        sug = {
+            "Pop / Dance": ["Dua Lipa Mix", "Future Nostalgia Full", "Dance Pop 2026"],
+            "Lo-Fi / Relax": ["Lofi Girl Live", "Chillhop Essentials", "Study Beats"],
+            "Rock / Indie": ["Arctic Monkeys Radio", "Indie Rock Classics", "New Rock 2026"],
+            "Reggaeton / Urbano": ["Bad Bunny Mix", "Karol G Hits", "Reggaeton Antiguo"]
+        }
+
+        for i, tema in enumerate(sug[seleccion]):
+            with [col1, col2, col3][i]:
+                st.markdown(f"**{tema}**")
+                query = tema.replace(" ", "+")
+                # Link de búsqueda directo que abre YouTube
+                url = f"https://www.youtube.com/results?search_query={query}"
+                st.link_button("🔍 Buscar", url)
+
+st.divider()
 with st.expander("📁 Mis Carpetas"):
-    st.button("🍿 Pop")
+    st.write("Guarda tus descubrimientos aquí.")
+    st.button("➕ Crear Nueva Carpeta")
